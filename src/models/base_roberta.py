@@ -4,6 +4,7 @@ https://www.semanticscholar.org/reader/8b9d77d5e52a70af37451d3db3d32781b83ea054 
 """
 
 import torch
+import transformers
 from transformers.optimization import get_linear_schedule_with_warmup
 
 from src.configs.constants import DLModelNames, TaskTypes
@@ -50,7 +51,7 @@ class BaseMultiModalRoberta(BaseModel):
         gaze_positions,
         eye_token_type_ids=None,
         **kwargs,
-    ) -> torch.Tensor:
+    ) -> transformers.modeling_outputs.SequenceClassifierOutput:
         """
         Forward pass of the model.
 
