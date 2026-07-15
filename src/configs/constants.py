@@ -492,7 +492,7 @@ class DataSets(StrEnum):
     COPCO = 'CopCo'
     POTEC = 'PoTeC'
     SBSAT = 'SBSAT'
-    HALLUCINATION = 'IITBHGC'
+    HALLUCINATION = 'IITB_HGC'
     MECO_L2 = 'MECOL2'
     MECO_L2W1 = 'MECOL2W1'
     MECO_L2W2 = 'MECOL2W2'
