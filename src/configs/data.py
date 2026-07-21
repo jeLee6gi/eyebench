@@ -562,6 +562,80 @@ class SBSAT_STD(SBSAT):
     max_tokens_in_word: int = 12
 
 
+@register_data
+@dataclass
+class ROAMM(DataArgs):
+    """
+    ROAMM data (Reading Observed At Mindless Moments).
+
+    Naturalistic single-page reading of 5 Wikipedia (2015) articles (Pluto,
+    Prisoner's Dilemma, Serena Williams, History of Film, The Voynich
+    Manuscript), each split into 10 pages. Provides page-level reading
+    comprehension scores and mind-wandering (MW) episode annotations
+    collected via the ReMind paradigm. ROAMM also includes co-registered
+    64-channel EEG, which EyeBench does not use since it models eye
+    movements only; EEG channels are dropped during preprocessing.
+    """
+
+    text_source: str = 'Wikipedia (2015)'
+    text_language: str = DatasetLanguage.ENGLISH
+    text_domain: str = 'General Knowledge'
+    text_type: str = 'page'
+    stratify: str = 'RC'
+
+    split_item_columns: list[str] = field(
+        default_factory=lambda: [Fields.UNIQUE_PARAGRAPH_ID]
+    )
+    tasks: dict[str, str] = field(
+        default_factory=lambda: {
+            PredMode.RC_TEXT_ONLY: 'RC',
+            PredMode.MW: 'MW',
+        }
+    )
+    n_questions_per_item: int = 1
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.raw_ia_path: Path = Path(
+            self.base_path / 'precomputed_reading_measures' / 'combined_ia.csv'
+        )
+        self.raw_fixations_path: Path = Path(
+            self.base_path / 'precomputed_events' / 'combined_fixations.csv'
+        )
+
+
+@register_data
+@dataclass
+class ROAMM_RC(ROAMM):
+    """
+    ROAMM Reading Comprehension (page-level multiple-choice question correctness).
+
+    Uses PredMode.RC_TEXT_ONLY rather than the shared PredMode.RC: ROAMM's
+    reading_metadata.csv only gives numeric response/answer-option indices,
+    not the actual MCQ wording, so this task is paragraph-only (no question
+    text prepended), unlike OneStop/PoTeC's RC which does have real question text.
+    """
+
+    task: PredMode = PredMode.RC_TEXT_ONLY
+    target_column: str = 'RC'
+    class_names: list[str] = field(default_factory=lambda: ['Incorrect', 'Correct'])
+    max_q_len: int = 40
+    max_tokens_in_word: int = 12
+
+
+@register_data
+@dataclass
+class ROAMM_MW(ROAMM):
+    """
+    ROAMM Mind-Wandering Detection (page-level: was an MW episode reported on this page).
+    """
+
+    task: PredMode = PredMode.MW
+    target_column: str = 'MW'
+    class_names: list[str] = field(default_factory=lambda: ['On-task', 'Mind-wandering'])
+    max_tokens_in_word: int = 12
+
+
 def get_data_args(class_name: str) -> DataArgs | None:
     """
     Get the data path arguments class by its name.
@@ -593,4 +667,6 @@ DATA_CONFIGS_MAPPING = {
     'PoTeC_RC': PoTeC_RC,
     'IITBHGC_CV': IITBHGC_CV,
     'OneStop_RC': OneStop_RC,
+    'ROAMM_RC': ROAMM_RC,
+    'ROAMM_MW': ROAMM_MW,
 }

@@ -334,12 +334,14 @@ class PredMode(StrEnum):
     """
 
     RCS = 'RCS'  # Reading Comprehension Skill
-    RC = 'RC'  # Reading Comprehension
+    RC = 'RC'  # Reading Comprehension (paragraph + question text)
+    RC_TEXT_ONLY = 'RC_TEXT_ONLY'  # Reading Comprehension without question text (paragraph-only)
     STD = 'STD'  # Subjective Text Difficulty
     TYP = 'TYP'  # Typicality
     CV = 'CV'  # Claim Verification
     LEX = 'LEX'  # Vocabulary Knowledge
     DE = 'DE'  # Domain Expertise
+    MW = 'MW'  # Mind-Wandering Detection
 
 
 BINARY_PARAGRAPH_ONLY_TASKS = [
@@ -347,6 +349,8 @@ BINARY_PARAGRAPH_ONLY_TASKS = [
     PredMode.TYP,
     PredMode.CV,
     PredMode.DE,
+    PredMode.MW,
+    PredMode.RC_TEXT_ONLY,
 ]
 BINARY_P_AND_Q_TASKS = [PredMode.RC]
 REGRESSION_PARAGRAPH_ONLY_TASKS = [PredMode.RCS, PredMode.LEX, PredMode.STD]
@@ -496,6 +500,7 @@ class DataSets(StrEnum):
     MECO_L2 = 'MECOL2'
     MECO_L2W1 = 'MECOL2W1'
     MECO_L2W2 = 'MECOL2W2'
+    ROAMM = 'ROAMM'
 
 
 class DiscriSupportedMetrics(StrEnum):

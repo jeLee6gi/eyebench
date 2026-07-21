@@ -32,6 +32,9 @@ from src.data.preprocessing.dataset_preprocessing.onestop import (  # noqa: E402
 from src.data.preprocessing.dataset_preprocessing.potec import (  # noqa: E402
     PoTeCProcessor,
 )
+from src.data.preprocessing.dataset_preprocessing.roamm import (  # noqa: E402
+    ROAMMProcessor,
+)
 from src.data.preprocessing.dataset_preprocessing.sbsat import (  # noqa: E402
     SBSATProcessor,
 )
@@ -45,6 +48,7 @@ PROCESSOR_REGISTRY = {
     DataSets.MECO_L2W1: MECOProcessor,
     DataSets.MECO_L2W2: MECOProcessor,
     DataSets.MECO_L2: MECOProcessor,
+    DataSets.ROAMM: ROAMMProcessor,
 }
 
 

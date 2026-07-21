@@ -70,6 +70,64 @@ def convert_rda_to_csv(root: Path, dataset_name: str) -> None:
     logger.info(f'Saved stimuli CSV to {csv_path}')
 
 
+# ROAMM is not registered in pymovements.DatasetLibrary and is distributed as
+# a full OSF *project* (folder tree of per-subject .pkl files, wiki_stories
+# stimulus/AOI files, and label files), not a small set of individually
+# addressable files like the MECOL2 auxiliary resources above. We mirror the
+# entire OSF storage tree with the public OSF API rather than using pm.Dataset.
+ROAMM_OSF_PROJECT_ID = 'kmvgb'
+
+
+def _download_osf_folder(api_url: str, dest_dir: Path) -> None:
+    """Recursively mirror an OSF storage folder to a local directory.
+
+    OSF's file-listing endpoint paginates (default page size is small
+    relative to subject_ml_data's 40+ subject folders), so a naive single
+    request only sees the first page. We must follow links['next'] until
+    it's null or we silently drop most of the dataset.
+    """
+    next_url: str | None = api_url
+    while next_url is not None:
+        response = requests.get(next_url, timeout=60)
+        response.raise_for_status()
+        payload = response.json()
+
+        for entry in payload['data']:
+            attrs = entry['attributes']
+            if attrs['kind'] == 'folder':
+                _download_osf_folder(
+                    entry['relationships']['files']['links']['related']['href'],
+                    dest_dir / attrs['name'],
+                )
+            else:
+                dest_path = dest_dir / attrs['name']
+                if dest_path.exists():
+                    continue
+                dest_dir.mkdir(parents=True, exist_ok=True)
+                download_url = entry['links']['download']
+                logger.info(f'Downloading {dest_path}')
+                with requests.get(download_url, stream=True, timeout=300) as r:
+                    r.raise_for_status()
+                    with open(dest_path, 'wb') as fp:
+                        for chunk in r.iter_content(chunk_size=1 << 20):
+                            fp.write(chunk)
+
+        next_url = payload.get('links', {}).get('next')
+
+
+def download_roamm(root: Path) -> None:
+    """Download the ROAMM dataset (subject_ml_data, wiki_stories, labels) from OSF."""
+    dest_root = root / DataSets.ROAMM
+    if dest_root.exists() and any(dest_root.iterdir()):
+        logger.info(f'ROAMM already present at {dest_root}. Continuing...')
+        return
+
+    logger.info(f'Downloading ROAMM from OSF project {ROAMM_OSF_PROJECT_ID}...')
+    dest_root.mkdir(parents=True, exist_ok=True)
+    api_url = f'https://api.osf.io/v2/nodes/{ROAMM_OSF_PROJECT_ID}/files/osfstorage/'
+    _download_osf_folder(api_url, dest_root)
+
+
 def prepare_dataset_definition(dataset_name: str):
     """Prepare dataset definition with gaze files disabled."""
     dataset_def = pm.DatasetLibrary.get(dataset_name)
@@ -131,6 +189,13 @@ def main() -> int:
         unit='dataset',
         total=len(datasets_names),
     ):
+        if dataset_name == DataSets.ROAMM:
+            # Not in pymovements.DatasetLibrary and not included in the
+            # default (no --dataset) run given its size (46M+ samples);
+            # must be requested explicitly via --dataset ROAMM.
+            download_roamm(data_path)
+            continue
+
         try:
             load_or_download_dataset(dataset_name, data_path, download=False)
             logger.info(f'{dataset_name} already downloaded. Continuing...')
